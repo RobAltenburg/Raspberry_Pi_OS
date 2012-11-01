@@ -14,39 +14,57 @@ main:
 
 	mov sp, #0x80000
 
-	pinNum .req r0
-	pinFunc .req r1
-	mov pinNum,#16
-	mov pinFunc,#1
+    /* set up the frame buffer */
+    mov r0,#1024
+    mov r1,#768
+    mov r2,#16
+    bl InitialiseFrameBuffer
+
+    teq r0,#0       /* check if the above returned zero */
+    bne noError$
+
+error$:             /* if there is an error, flash the ok light */
+    mov r0,#16
+	mov r1,#0
 	bl SetGpioFunction
-	.unreq pinNum
-	.unreq pinFunc
-	
+    ldr r0,=250000
+    bl wait
+    mov r0,#16
+    mov r1,#1
+    bl SetGpioFunction
+    ldr r0,=250000
+    bl wait
+    b error$
 
-loop$:
+noError$:
 
-	/* turn pin on */
-	pinNum .req r0
-	pinVal .req r1
-	mov pinNum,#16
-	mov pinVal,#0
-	bl SetGpio
-	.unreq pinNum
-	.unreq pinVal
+    fbInfoAddr .req r4  /* mov and name our info register */
+    mov fbInfoAddr,r0
 
-	ldr r0,=500000
-	bl delay
+render$:
+    fbAddr .req r3
+    ldr fbAddr,[fbInfoAddr,#32]
 
-	/* turn pin off */
-	pinNum .req r0
-	pinVal .req r1
-	mov pinNum,#16
-	mov pinVal,#1
-	bl SetGpio
-	.unreq pinNum
-	.unreq pinVal
+    colour .req r0
+    y .req r1
+    mov y,#768
+    drawRow$:
+    x .req r2
+    mov x,#1024
 
-	ldr r0,=500000
-	bl delay
+drawPixel$:
+    strh colour,[fbAddr]
+    add fbAddr,#2
+    sub x,#1
+    teq x,#0
+    bne drawPixel$
 
-b loop$
+    sub y,#1
+    add colour,#1
+    teq y,#0
+    bne drawRow$
+
+    b render$
+
+    .unreq fbAddr
+    .unreq fbInfoAddr

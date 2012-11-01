@@ -1,7 +1,7 @@
 
 .globl getSysTimer
 .globl getTime
-.globl delay
+.globl wait
 
 getSysTimer:
 	ldr r0,=0x20003000
@@ -13,7 +13,7 @@ getTime:
 	ldrd r0, r1, [r0, #4]
 	pop {pc}
 	
-delay:
+wait:
 	push {lr}
 	waitTime .req r2
 	mov waitTime, r0
