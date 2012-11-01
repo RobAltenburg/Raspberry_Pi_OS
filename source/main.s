@@ -10,13 +10,6 @@ b main
 
 .section .text
 
-delay:
-wait2$:
-	sub r2,#1
-	cmp r2,#0
-	bne wait2$
-	mov pc, lr
-
 main:
 
 	mov sp, #0x80000
@@ -41,7 +34,7 @@ loop$:
 	.unreq pinNum
 	.unreq pinVal
 
-	mov r2,#0x3F0000
+	ldr r0,=500000
 	bl delay
 
 	/* turn pin off */
@@ -53,7 +46,7 @@ loop$:
 	.unreq pinNum
 	.unreq pinVal
 
-	mov r2,#0x3F0000
+	ldr r0,=500000
 	bl delay
 
 b loop$
