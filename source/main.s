@@ -15,7 +15,7 @@ wait2$:
 	sub r2,#1
 	cmp r2,#0
 	bne wait2$
-	pop {pc}
+	mov pc, lr
 
 main:
 
@@ -29,7 +29,6 @@ main:
 	.unreq pinNum
 	.unreq pinFunc
 	
-
 
 loop$:
 

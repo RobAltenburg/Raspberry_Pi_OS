@@ -11,27 +11,39 @@ GetGpioAddress:
 
 /**********************************************
  * SetGpioFunction
+ * 
+ * Sets the pin as input (0), output (1), or 
+ * alternate function 0 through 5
+ *
  * takes:
  *		r0 = GPIO pin number (0 - 53)
  *		r1 = GPIO pin function (0 - 7)
  **********************************************/
 
-
 SetGpioFunction:
 		
+	/* check parameters for safety ---------------------*/
 	
 	cmp r0,#53			/* make sure pin is <= 53 */
 	cmpls r1,#7			/* make sure function is <= 7 */
 	movhi pc,lr  		/* return if parameters are out of rage*/
 
 	push {lr}			/* preserve lr */
-	mov r2,r0			/* move r0 to r2 to preserve it on call */
+	
+	pinFunc .req r1
+	pinNum .req r2
+	
+	mov pinNum,r0		/* move r0 to r2 to preserve it on call */
+	
 	bl GetGpioAddress
+	gpioAddr .req r0
 
 
+	/* calculate pinFunc ---------------------*/
+	
 	functionLoop$:
-	cmp r2,#9			/* is r2 higher than 9? */
-	subhi r2,#10		/* if so, subtract 10 */
+	cmp pinNum,#9		/* is r2 higher than 9? */
+	subhi pinNum,#10	/* if so, subtract 10 */
 	addhi r0,#4			/* and add four to the gpio address */
 	bhi functionLoop$
 						/* r0 now points to the gpio address offset for the block
@@ -39,13 +51,47 @@ SetGpioFunction:
 						   each pin is represented by 3 bits. (so eight functions
 						   can be encoded for each pin.) */
 	
-						/* r2 is now the number of the pin (0-9) in the set of 10 */
-	add r2, r2,lsl #1	/* same as (r2 * 3), but faster.  r2 is now the number of bits */
-	lsl r1,r2			/* left shift the pin function r2 times */
-	str r1,[r0]			/* store this in the gpio controller address */
+								/* r2 is now the number of the pin (0-9) in the set of 10 */
+	add pinNum, pinNum,lsl #1	/* same as (r2 * 3), but faster.  r2 is now the number of bits */
+	lsl pinFunc,pinNum			/* left shift the pin function r2 times */ 
 	
-	pop {pc}			/* return */
+	/* if pinFunc were now stored in the controller address, it would reset functions set on
+	   all the other pins in the given block of ten pins.  The next bit of code fixes this by
+	   or-ing the pinFunc with the bits set for other pins.
+			
+	/* orr pinFunc with the existing function2 -------*/
 	
+	mask .req r3
+	mov mask, #7		/* mask = 111 */
+	lsl mask, pinNum	/* mask = 000111...000 */
+	.unreq pinNum
+	
+	mvn mask, mask 		/* mask = 111000...111 */  
+	ldr r2, [gpioAddr]  
+	and r2, mask        /* only other already set bits appear in mask. */  
+	
+	.unreq mask
+	orr pinFunc, r2		/* pinFunc now contains these other bits */
+
+	
+	str pinFunc,[gpioAddr]	/* store this in the gpio controller address */
+	
+	.unreq pinFunc
+	.unreq gpioAddr
+	 pop {pc}			/* return */
+	
+
+
+/**********************************************
+ * SetGpio
+ * 
+ * Toggles the state of the given pin
+ *
+ * takes:
+ *		r0 = GPIO pin number (0 - 53)
+ *		
+ **********************************************/
+
 
 SetGpio:
 
