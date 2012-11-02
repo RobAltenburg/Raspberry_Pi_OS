@@ -1,140 +1,118 @@
+/******************************************************************************
+*	gpio.s
+*	 by Alex Chadwick
+*
+*	A sample assembly code implementation of the screen02 operating system.
+*	See main.s for details.
+*
+*	gpio.s contains the rountines for manipulation of the GPIO ports.
+******************************************************************************/
+
+/* NEW
+* According to the EABI, all method calls should use r0-r3 for passing
+* parameters, should preserve registers r4-r8,r10-r11,sp between calls, and 
+* should return values in r0 (and r1 if needed). 
+* It does also stipulate many things about how methods should use the registers
+* and stack during calls, but we're using hand coded assembly. All we need to 
+* do is obey the start and end conditions, and if all our methods do this, they
+* would all work from C.
+*/
+
+/* NEW
+* GetGpioAddress returns the base address of the GPIO region as a physical address
+* in register r0.
+* C++ Signature: void* GetGpioAddress()
+*/
 .globl GetGpioAddress
+GetGpioAddress: 
+	gpioAddr .req r0
+	ldr gpioAddr,=0x20200000
+	mov pc,lr
+	.unreq gpioAddr
+
+/* NEW
+* SetGpioFunction sets the function of the GPIO register addressed by r0 to the
+* low  3 bits of r1.
+* C++ Signature: void SetGpioFunction(u32 gpioRegister, u32 function)
+*/
 .globl SetGpioFunction
-.globl SetGpio
-
-
-GetGpioAddress:
-		
-	ldr r0,=0x20200000	/* put gpio address in r0 */
-	mov pc,lr			/* return */
-
-
-/**********************************************
- * SetGpioFunction
- * 
- * Sets the pin as input (0), output (1), or 
- * alternate function 0 through 5
- *
- * takes:
- *		r0 = GPIO pin number (0 - 53)
- *		r1 = GPIO pin function (0 - 7)
- **********************************************/
-
 SetGpioFunction:
-		
-	/* check parameters for safety ---------------------*/
-	
-	cmp r0,#53			/* make sure pin is <= 53 */
-	cmpls r1,#7			/* make sure function is <= 7 */
-	movhi pc,lr  		/* return if parameters are out of rage*/
+    pinNum .req r0
+    pinFunc .req r1
+	cmp pinNum,#53
+	cmpls pinFunc,#7
+	movhi pc,lr
 
-	push {lr}			/* preserve lr */
-	
-	pinFunc .req r1
+	push {lr}
+	mov r2,pinNum
+	.unreq pinNum
 	pinNum .req r2
-	
-	mov pinNum,r0		/* move r0 to r2 to preserve it on call */
-	
 	bl GetGpioAddress
 	gpioAddr .req r0
 
-
-	/* calculate pinFunc ---------------------*/
-	
 	functionLoop$:
-	cmp pinNum,#9		/* is r2 higher than 9? */
-	subhi pinNum,#10	/* if so, subtract 10 */
-	addhi r0,#4			/* and add four to the gpio address */
-	bhi functionLoop$
-						/* r0 now points to the gpio address offset for the block
-						   of 10 pins.  That address can hold a 32 bit value.
-						   each pin is represented by 3 bits. (so eight functions
-						   can be encoded for each pin.) */
-	
-								/* r2 is now the number of the pin (0-9) in the set of 10 */
-	add pinNum, pinNum,lsl #1	/* same as (r2 * 3), but faster.  r2 is now the number of bits */
-	lsl pinFunc,pinNum			/* left shift the pin function r2 times */ 
-	
-	/* if pinFunc were now stored in the controller address, it would reset functions set on
-	   all the other pins in the given block of ten pins.  The next bit of code fixes this by
-	   or-ing the pinFunc with the bits set for other pins.
-			
-	/* orr pinFunc with the existing function2 -------*/
-	
-	mask .req r3
-	mov mask, #7		/* mask = 111 */
-	lsl mask, pinNum	/* mask = 000111...000 */
-	.unreq pinNum
-	
-	mvn mask, mask 		/* mask = 111000...111 */  
-	ldr r2, [gpioAddr]  
-	and r2, mask        /* only other already set bits appear in mask. */  
-	
-	.unreq mask
-	orr pinFunc, r2		/* pinFunc now contains these other bits */
+		cmp pinNum,#9
+		subhi pinNum,#10
+		addhi gpioAddr,#4
+		bhi functionLoop$
 
-	
-	str pinFunc,[gpioAddr]	/* store this in the gpio controller address */
-	
+	add pinNum, pinNum,lsl #1
+	lsl pinFunc,pinNum
+
+	mask .req r3
+	mov mask,#7					/* r3 = 111 in binary */
+	lsl mask,pinNum				/* r3 = 11100..00 where the 111 is in the same position as the function in r1 */
+	.unreq pinNum
+
+	mvn mask,mask				/* r3 = 11..1100011..11 where the 000 is in the same poisiont as the function in r1 */
+	oldFunc .req r2
+	ldr oldFunc,[gpioAddr]		/* r2 = existing code */
+	and oldFunc,mask			/* r2 = existing code with bits for this pin all 0 */
+	.unreq mask
+
+	orr pinFunc,oldFunc			/* r1 = existing code with correct bits set */
+	.unreq oldFunc
+
+	str pinFunc,[gpioAddr]
 	.unreq pinFunc
 	.unreq gpioAddr
-	 pop {pc}			/* return */
-	
+	pop {pc}
 
+/* NEW
+* SetGpio sets the GPIO pin addressed by register r0 high if r1 != 0 and low
+* otherwise. 
+* C++ Signature: void SetGpio(u32 gpioRegister, u32 value)
+*/
+.globl SetGpio
+SetGpio:	
+    pinNum .req r0
+    pinVal .req r1
 
-/**********************************************
- * SetGpio
- * 
- * Toggles the state of the given pin
- *
- * takes:
- *		r0 = GPIO pin number (0 - 53)
- *		
- **********************************************/
+	cmp pinNum,#53
+	movhi pc,lr
+	push {lr}
+	mov r2,pinNum	
+    .unreq pinNum	
+    pinNum .req r2
+	bl GetGpioAddress
+    gpioAddr .req r0
 
-
-SetGpio:
-
-	pinNum .req r0		/* set alias for r0 */
-	pinVal .req r1		/* set alias for r1 */
-	
-	cmp pinNum,#53		/* make sure pin is <= 53 */
-	movhi pc,lr			/* if not, return*/
-	
-	push {lr}		
-	
-	mov r2,pinNum		/* move pin to... */
-	.unreq pinNum		/* forget old alias... */ 
-	pinNum .req r2		/* and set new alias */
-	
-	bl GetGpioAddress	/* put gpio address in r0 */
-	gpioAddr .req r0	/* set an alias */
-	
-	
-	/* GPIO controllers have two set of four bytes each.
-	   The first controls 32 pins, the second set controls
-	   22 pins. */
-			
 	pinBank .req r3
-	lsr pinBank,pinNum,#5	/* Which set?  pinBank >> (pinNum div 32) */
-	lsl pinBank,#2			/* rs(pinBank * 4) */
-							/* pinBank is now 0 or 4 */
-	add gpioAddr,pinBank	/* add it to gpioAddr */
-	
-	.unreq pinBank			/* forget the alias */
-	
- 
-	and pinNum,#31			/* look at the last 5 bits of pinNum */
-	setBit .req r3			/* alias setBit... */
-	mov setBit,#1			/* set it to one */
-	lsl setBit,pinNum		/* move the bit into place */
-	.unreq pinNum           /* forget the alias */
-	
-	teq pinVal,#0			/* is the pinval 0? */
+	lsr pinBank,pinNum,#5
+	lsl pinBank,#2
+	add gpioAddr,pinBank
+	.unreq pinBank
+
+	and pinNum,#31
+	setBit .req r3
+	mov setBit,#1
+	lsl setBit,pinNum
+	.unreq pinNum
+
+	teq pinVal,#0
 	.unreq pinVal
-	streq setBit,[gpioAddr,#40]	/* if so, turn pin off */
-	strne setBit,[gpioAddr,#28] /* else, turn pin on */
+	streq setBit,[gpioAddr,#40]
+	strne setBit,[gpioAddr,#28]
 	.unreq setBit
 	.unreq gpioAddr
-	pop {pc}				/* return */
-		
+	pop {pc}
