@@ -198,7 +198,7 @@ DrawCharacter:
 		bits .req r7
 		bit .req r8
 		
-		ldrb bits, [charAddr]  /* everything below here works */ 
+		ldrb bits, [charAddr] 
 			
 		mov bit,#8
 
@@ -278,7 +278,6 @@ DrawString:
 		cwidth .req r0
 		cheight .req r1
 		
-		add cwidth, #2  /*rca pad the characters */
 		
 		teq char,#'\n'
 		moveq x,x0

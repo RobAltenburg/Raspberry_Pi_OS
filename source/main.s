@@ -60,7 +60,7 @@ main:
 /* 
 * Setup the screen.
 */
-	mov r0,#1024
+	mov r0,#1360  /* was 1024 */
 	mov r1,#768
 	mov r2,#16
 	bl InitialiseFrameBuffer
@@ -86,6 +86,19 @@ main:
 */
 	bl SetGraphicsAddress
 	
+	mov r0,#9
+	bl FindTag
+	ldr r1,[r0]
+	lsl r1,#2
+	sub r1,#8
+	add r0,#8
+	mov r2,#0
+	mov r3,#0
+	bl DrawString
+	loop$:
+	b loop$
+
+/*	
 	lastRandom .req r7
 	lastX .req r8
 	lastY .req r9
@@ -130,3 +143,4 @@ foo$:
 	.unreq lastX
 	.unreq lastY
 	.unreq colour
+*/

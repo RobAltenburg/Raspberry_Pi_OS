@@ -1,3 +1,11 @@
+/******************************************************************************
+*	alert.s
+*	 by Robert Altenburg
+*
+*	Some routines for manipulating the LED and flashing out numbers
+*
+******************************************************************************/
+
 .globl lightOn
 lightOn:
 	push {lr}
