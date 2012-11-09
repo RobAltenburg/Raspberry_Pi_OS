@@ -21,6 +21,9 @@
 * };
 * FrameBuferDescription FrameBufferInfo =
 *		{ 1024, 768, 1024, 768, 0, 24, 0, 0, 0, 0 };
+*
+* RCA: 	It appears changing values here doesn't do anything.
+*  		This structure is written on initialization
 */
 .section .data
 .align 4  /* rca: was 12 */
@@ -73,7 +76,7 @@ InitialiseFrameBuffer:
 	.unreq height
 	.unreq bitDepth
 	
-pointerWait$:			/* label moved up here to fix a hang */ 
+pointerWait$:			/* RCA: label moved up here to fix a hang */ 
 	mov r0,fbInfoAddr
 	mov r1,#1
 	bl MailboxWrite
@@ -85,11 +88,11 @@ pointerWait$:			/* label moved up here to fix a hang */
 	movne result,#0
 	popne {r4,pc}
 
-/*	pointerWait$:*/
+/* RCA: original version had "pointerWait$:" here */
 		ldr result,[fbInfoAddr,#32]
 		teq result,#0
 		beq pointerWait$
-	/*^^^^^^^^^ was hanging here ^^^^^^^^^^*/
+
 				
 	mov result,fbInfoAddr
 	pop {r4,pc}

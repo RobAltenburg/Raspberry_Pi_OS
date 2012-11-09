@@ -28,7 +28,7 @@ graphicsAddress:
 /* NEW
 * Font stores the bitmap images for the first 128 characters.
 */
-.align 4
+.align 4		@ needs to be aligned to a 16-bit boundry
 font:		
 	.incbin "font0.bin"
 
@@ -221,7 +221,7 @@ DrawCharacter:
 		.unreq bits
 		add y,#1
 		add charAddr,#1
-		tst charAddr,#0b1111
+		tst charAddr,#0b1111	@ all characters start at ADDR xx00
 		bne lineLoop$
 
 	.unreq x
@@ -279,12 +279,12 @@ DrawString:
 		cheight .req r1
 		
 		
-		teq char,#'\n'
+		teq char,#'\n'		@ on newline, wrap to next line
 		moveq x,x0
 		addeq y,cheight
 		beq stringLoop$
 
-		teq char,#'\t'
+		teq char,#'\t'		@ on tab, move one character width
 		addne x,cwidth
 		bne stringLoop$
 

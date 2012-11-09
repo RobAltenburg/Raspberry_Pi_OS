@@ -81,6 +81,12 @@ flashLong:
 	ldr r0,=1000000
 	bl Wait
 	pop {pc}	
+
+/* 	flashInt
+	blinks the LED once for each bit in a int32, starting at bit zero
+	short flash = 0
+	long flash = 1
+*/
 	
 .globl flashInt
 flashInt:
