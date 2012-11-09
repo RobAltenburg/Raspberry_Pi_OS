@@ -1,4 +1,4 @@
-.global lightOn
+.globl lightOn
 lightOn:
 	push {lr}
 	mov r0,#16
@@ -11,17 +11,17 @@ lightOn:
 	pop	{pc}
 
 	
-lightOn$:				/* local version, when we know the GPIO Function is set */
+lightOn$:			/* local version, when we know the GPIO Function is set */
 	push {lr}
 	mov r0,#16
 	mov r1,#0
 	bl SetGpio
 	pop {pc}
 
-.global lightOff
+.globl lightOff
 lightOff:
 	push {lr}
-	mov r0,#16	/* shouldn't need this.  but just to make sure */
+	mov r0,#16		/* shouldn't need this.  but just to make sure */
 	mov r1,#1
 	bl SetGpioFunction
 
@@ -37,27 +37,59 @@ lightOff$:
 	bl SetGpio
 	pop {pc}
 
-.global flash
-flash:
-	push {lr}
 
-repeat$:
+.globl flashQuick
+flashQuick:
+	push {lr}
 	bl lightOn
 	ldr r0,=250000
 	bl Wait			
-	
+
 	bl lightOff$
 	ldr r0,=250000
 	bl Wait
-
-	bl lightOn$
-	ldr r0,=500000
-	bl Wait			
-	
-	bl lightOff$
-	ldr r0,=500000
-	bl Wait
-
 	pop {pc}
+
+.globl flashShort
+flashShort:
+	push {lr}
+	bl lightOn
+	ldr r0,=100000
+	bl Wait			
+
+	bl lightOff$
+	ldr r0,=1000000
+	bl Wait
+	pop {pc}
+
+.globl flashLong	
+flashLong:
+	push {lr}
+	bl lightOn
+	ldr r0,=1000000
+	bl Wait			
+
+	bl lightOff$
+	ldr r0,=1000000
+	bl Wait
+	pop {pc}	
+	
+.globl flashInt
+flashInt:
+	push {r4, r5, lr}
+	test .req r4
+	count .req r5
+	mov count, #32
+	mov test, r0
+next$:	
+	tst test, #0x01
+	bleq flashShort
+	tst test, #0x01
+	blne flashLong
+	lsr test, #1
+	subs count, count, #1
+	bne next$
+	pop {r4, r5, pc}
+
 	
 	

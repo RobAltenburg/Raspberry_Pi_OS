@@ -49,9 +49,13 @@ main:
 */
 	mov sp,#0x8000
 
-	bl flash
-	ldr r0,=500000
+	bl flashQuick
+	bl flashQuick
+	bl flashQuick	
+	ldr r0,=1000000
 	bl Wait
+		
+		
 		
 /* 
 * Setup the screen.
@@ -93,36 +97,32 @@ main:
 	mov r9,#0
 	mov r10,#0
 	
-render$:
 
-	mov r0,lastRandom
-	bl Random
-	mov x,r0
-	bl Random
-	mov y,r0
-	mov lastRandom,r0
-
-	mov r0,colour
-	add colour,#1
-	lsl colour,#16
-	lsr colour,#16
+ 	ldr r0, =0xFFFF
 	bl SetForeColour
-		
-	mov r0,lastX
-	mov r1,lastY
-	lsr r2,x,#22
-	lsr r3,y,#22
+			
 
-	cmp r3,#768
-	bhi render$
+	mov r0, #0x41
+	mov r1, #400
+	mov r2, #300
 	
-	mov lastX,r2
-	mov lastY,r3
+	bl DrawCharacter
 
+	ldr r0,=foo$
+	mov r1,#4
+	mov r2,#10
+	mov r3,#10
+	bl DrawString
 	
-	bl DrawLine
-
+render$:
 	b render$
+
+foo$:
+	.byte 0x42
+	.byte 0x43
+	.byte 0x44
+	.byte 0x45
+	.byte 0x00
 
 	.unreq x
 	.unreq y
