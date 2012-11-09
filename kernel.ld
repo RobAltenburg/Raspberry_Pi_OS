@@ -1,9 +1,11 @@
 /******************************************************************************
 *	kernel.ld
 *	 by Alex Chadwick
-*
+*	
 *	A linker script for generation of raspberry pi kernel images.
 ******************************************************************************/
+
+/* RCA: Edited to assume code will load at 0x8000 */
 
 SECTIONS {
 	/*
