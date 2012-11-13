@@ -1,9 +1,8 @@
 /******************************************************************************
 *	frameBuffer.s
-*	 by Alex Chadwick
+*	 original by Alex Chadwick
+*    modifications by Robert Altenburg
 *
-*	A sample assembly code implementation of the screen02 operating system.
-*	See main.s for details.
 *
 *	frameBuffer.s contains code that creates and manipulates the frame buffer.
 ******************************************************************************/

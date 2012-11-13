@@ -90,7 +90,7 @@ flashLong:
 /* 	flashInt
 	blinks the LED once for each bit in a int32, starting at bit zero
 	short flash = 0
-	long flash = 1
+	long flash = 1 
 */
 	
 .globl flashInt

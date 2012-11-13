@@ -32,6 +32,15 @@ graphicsAddress:
 font:		
 	.incbin "font0.bin"
 
+
+/* location of x, y to remember between writes. */
+.align 4
+.globl DrawInfo
+DrawInfo:
+	.int 0 @ x position
+	.int 0 @ y position
+	.int 0 @ color
+
 /*
 * SetForeColour changes the current drawing colour to the 16 bit colour in r0.
 * C++ Signature: void SetForeColour(u16 colour);
@@ -311,4 +320,76 @@ DrawString:
 	.unreq length
 
 
+	/* NEW
+	* stdio_write is like DrawString except it remembers its location between
+	* writes and it wraps at the edge of the screen 
+	*/
+.global stdio_write
+stdio_write:
+	x .req r4
+	y .req r5
+	x0 .req r6
+	string .req r7
+	length .req r8
+	char .req r9
+	dInfoAddr .req r10
+
+	push {r4,r5,r6,r7,r8,r9,r10,lr}
+
+	ldr dInfoAddr, =DrawInfo
+
+	mov string,r0
+	ldr x,[dInfoAddr]
+	mov x0,x
+	ldr y,[dInfoAddr,#4]
+	mov length,r1
+
+stringLoopSW$:
+	subs length,#1
+	blt stringLoopEndSW$
+
+	ldrb char,[string]
+	add string,#1
+
+	mov r0,char
+	mov r1,x
+	mov r2,y
+	bl DrawCharacter
+	cwidth .req r0
+	cheight .req r1
+		
+	teq char,#'\n'		@ on newline, wrap to next line
+	moveq x,x0
+	addeq y,cheight
+	beq stringLoopSW$
+
+	teq char,#'\t'		@ on tab, move one character width
+	addne x,cwidth
+	bne stringLoopSW$
+
+	add cwidth, cwidth,lsl #2
+	x1 .req r1
+	mov x1,x0
+		
+	stringLoopTabSW$:
+		add x1,cwidth
+		cmp x,x1
+		bge stringLoopTabSW$
+	mov x,x1
+	.unreq x1	
+	b stringLoopSW$
+
+stringLoopEndSW$:
+	.unreq cwidth
+	.unreq cheight
+	str x, [dInfoAddr]
+	str y, [dInfoAddr, #4]
+	pop {r4,r5,r6,r7,r8,r9,r10,pc}
+.unreq x
+.unreq y
+.unreq x0
+.unreq string
+.unreq length
+
+	
 		

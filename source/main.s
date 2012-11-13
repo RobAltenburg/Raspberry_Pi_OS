@@ -1,12 +1,16 @@
 /******************************************************************************
 *	main.s
-*	 by Alex Chadwick
+*	 based on the original by Alex Chadwick
+*    modifications by Robert Altenburg
 *
-*	A sample assembly code implementation of the screen02 operating system, that 
-*	renders pseudo random lines to the screen.
+*	Raspbery Pi operating system workbench
 *
 *	main.s contains the main operating system, and IVT code.
 ******************************************************************************/
+
+.equ SCREEN_HEIGHT, 768
+.equ SCREEN_WIDTH, 1360
+.equ COLOR_DEPTH, 16
 
 /*
 * .globl is a directive to our assembler, that tells it to export this symbol
@@ -58,9 +62,9 @@ main:
 /* 
 * Setup the screen.
 */
-	mov r0,#1360  /* was 1024 */
-	mov r1,#768
-	mov r2,#16
+	mov r0,#SCREEN_WIDTH /* was 1024 */
+	mov r1,#SCREEN_HEIGHT
+	mov r2,#COLOR_DEPTH
 	bl InitialiseFrameBuffer
 
 /* 
@@ -88,7 +92,7 @@ main:
 
 
 	ldr r0, =format
-	mov r1, #10
+	mov r1, #11
 	ldr r2, =buffer
 	mov r3, #99
 	bl FormatString
@@ -96,17 +100,18 @@ main:
 	
 	mov r1, r0
 	ldr r0, =buffer
-	mov r2, #10
-	mov r3, #10
-	bl DrawString
+	bl stdio_write
 
+	mov r1, r0
+	ldr r0, =buffer
+	bl stdio_write
 
 loop$:
 	b loop$
 
 .section .data
 format:
-	.asciz "testing %u"
+	.asciz "testing %u\n"
 formatEnd:
 	
 buffer:
