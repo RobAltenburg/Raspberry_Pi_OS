@@ -35,8 +35,6 @@ b main
 */
 .section .text
 
-
-
 /*
 * main is what we shall call our main operating system method. It never 
 * returns, and takes no parameters.
@@ -84,17 +82,33 @@ main:
 /* NEW
 * Let our drawing method know where we are drawing to.
 */
+
+
 	bl SetGraphicsAddress
+
+
+	ldr r0, =format
+	mov r1, #10
+	ldr r2, =buffer
+	mov r3, #99
+	bl FormatString
+
 	
-	mov r0,#9
-	bl FindTag
-	ldr r1,[r0]
-	lsl r1,#2
-	sub r1,#8
-	add r0,#8
-	mov r2,#0
-	mov r3,#0
+	mov r1, r0
+	ldr r0, =buffer
+	mov r2, #10
+	mov r3, #10
 	bl DrawString
-	loop$:
+
+
+loop$:
 	b loop$
 
+.section .data
+format:
+	.asciz "testing %u"
+formatEnd:
+	
+buffer:
+	.space 256
+	

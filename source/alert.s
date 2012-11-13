@@ -6,6 +6,11 @@
 *
 ******************************************************************************/
 
+.equ SECOND, 1000000
+.equ HALF_SECOND, 500000
+.equ QUARTER_SECOND, 250000
+.equ TENTH_SECOND, 100000
+
 .globl lightOn
 lightOn:
 	push {lr}
@@ -50,11 +55,11 @@ lightOff$:
 flashQuick:
 	push {lr}
 	bl lightOn
-	ldr r0,=250000
+	ldr r0,=QUARTER_SECOND
 	bl Wait			
 
 	bl lightOff$
-	ldr r0,=250000
+	ldr r0,=QUARTER_SECOND
 	bl Wait
 	pop {pc}
 
@@ -62,11 +67,11 @@ flashQuick:
 flashShort:
 	push {lr}
 	bl lightOn
-	ldr r0,=100000
+	ldr r0,=TENTH_SECOND
 	bl Wait			
 
 	bl lightOff$
-	ldr r0,=1000000
+	ldr r0,=SECOND
 	bl Wait
 	pop {pc}
 
@@ -74,11 +79,11 @@ flashShort:
 flashLong:
 	push {lr}
 	bl lightOn
-	ldr r0,=1000000
+	ldr r0,=SECOND
 	bl Wait			
 
 	bl lightOff$
-	ldr r0,=1000000
+	ldr r0,=SECOND
 	bl Wait
 	pop {pc}	
 
@@ -90,7 +95,7 @@ flashLong:
 	
 .globl flashInt
 flashInt:
-	push {r4, r5, lr}
+	push {r0, r1, r4, r5, lr}
 	test .req r4
 	count .req r5
 	mov count, #32
@@ -103,7 +108,7 @@ next$:
 	lsr test, #1
 	subs count, count, #1
 	bne next$
-	pop {r4, r5, pc}
+	pop {r0, r1, r4, r5, pc}
 
 	
 	
