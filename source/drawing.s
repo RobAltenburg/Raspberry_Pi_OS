@@ -1,11 +1,10 @@
 /******************************************************************************
 *	drawing.s
 *	 by Alex Chadwick
+*    modifications by Robert Altenburg
 *
-*	A sample assembly code implementation of the screen03 operating system.
-*	See main.s for details.
 *
-*	drawing.s contains code to do with drawing shapes to the screen.
+*	drawing.s contains code to do with drawing shapes and characters to the screen.
 ******************************************************************************/
 
 /*
@@ -323,27 +322,34 @@ DrawString:
 	/* NEW
 	* stdio_write is like DrawString except it remembers its location between
 	* writes and it wraps at the edge of the screen 
+	* take:
+	*		r0 buffer
+	*		r1 length
 	*/
 .global stdio_write
 stdio_write:
+	dInfoAddr .req r3
 	x .req r4
 	y .req r5
 	x0 .req r6
 	string .req r7
 	length .req r8
 	char .req r9
-	dInfoAddr .req r10
+	
 
-	push {r4,r5,r6,r7,r8,r9,r10,lr}
+	push {r4,r5,r6,r7,r8,r9,r11,lr}
 
 	ldr dInfoAddr, =DrawInfo
-
 	mov string,r0
 	ldr x,[dInfoAddr]
 	mov x0,x
 	ldr y,[dInfoAddr,#4]
 	mov length,r1
-
+	
+	ldr r0, =graphicsAddress  
+	ldr r3, [r0, #0] 	@ r3 is now screen width.  overwrites dInfoAdder
+	ldr r11, [r0, #4] 	@ r11 is now screen height
+	
 stringLoopSW$:
 	subs length,#1
 	blt stringLoopEndSW$
@@ -356,7 +362,17 @@ stringLoopSW$:
 	mov r2,y
 	bl DrawCharacter
 	cwidth .req r0
-	cheight .req r1
+	cheight .req r1	
+	
+	/* wrap at the end of the line */
+	/* note, this overwrites dInfoAddr, so we reload at the end of the string */	
+	add x, cwidth		@what is the x pos of the next char?					
+	cmp x, r3			@ Compare with screen width
+	movhi x,x0			@ if hi, Carrige Return
+	addhi y,cheight		@ line feed
+	subls x, cwidth		@ if didn't reset line, restore x'
+
+	/* todo:  add code to scroll the screen */
 		
 	teq char,#'\n'		@ on newline, wrap to next line
 	moveq x,x0
@@ -382,14 +398,20 @@ stringLoopSW$:
 stringLoopEndSW$:
 	.unreq cwidth
 	.unreq cheight
+	
+	/* save the ending x,y position */
+	ldr dInfoAddr, =DrawInfo
 	str x, [dInfoAddr]
 	str y, [dInfoAddr, #4]
-	pop {r4,r5,r6,r7,r8,r9,r10,pc}
+	
+	pop {r4,r5,r6,r7,r8,r9,r11,pc}
+	
 .unreq x
 .unreq y
 .unreq x0
 .unreq string
 .unreq length
+.unreq dInfoAddr
 
 	
 		

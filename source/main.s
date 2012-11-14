@@ -75,10 +75,10 @@ main:
 		
 	bl lightOn
 
-	error$:
+error$:
 		b error$
 
-	noError$:
+noError$:
 
 	fbInfoAddr .req r4
 	mov fbInfoAddr,r0
@@ -90,20 +90,20 @@ main:
 
 	bl SetGraphicsAddress
 
-
+/*
 	ldr r0, =format
 	mov r1, #11
 	ldr r2, =buffer
-	mov r3, #99
+	ldr r3,[fbInfoAddr]
 	bl FormatString
-
 	
 	mov r1, r0
 	ldr r0, =buffer
 	bl stdio_write
+*/
 
-	mov r1, r0
-	ldr r0, =buffer
+	mov r1, #200
+	ldr r0, =format
 	bl stdio_write
 
 loop$:
@@ -111,7 +111,9 @@ loop$:
 
 .section .data
 format:
-	.asciz "testing %u\n"
+.rept 20
+	.ascii "---------|"
+.endr
 formatEnd:
 	
 buffer:
